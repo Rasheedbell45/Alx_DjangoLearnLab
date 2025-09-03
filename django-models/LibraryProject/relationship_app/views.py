@@ -35,11 +35,11 @@ def register_view(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)  # auto-login after registration
-            return redirect("list_books")
+            login(request, user)
+            return redirect("list_books")  # redirect to any page you want
     else:
         form = UserCreationForm()
-    return render(request, "register.html", {"form": form})
+    return render(request, "relationship_app/register.html", {"form": form})
 
 
 # User Login
