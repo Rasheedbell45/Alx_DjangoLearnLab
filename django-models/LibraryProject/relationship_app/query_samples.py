@@ -22,7 +22,7 @@ def run_queries():
     print(f"Books in {library.name}: {[book.title for book in library_books]}")
 
     # Retrieve the librarian for a library
-    librarian = library.librarian
+    librarian = Librarian.objects.get(library=library)
     print(f"Librarian for {library.name}: {librarian.name}")
 
 
