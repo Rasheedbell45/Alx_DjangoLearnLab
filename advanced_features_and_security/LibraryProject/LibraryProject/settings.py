@@ -3,10 +3,10 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-CHANGE_ME"  # replace with your own secret key
-DEBUG = True
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "unsafe-secret-key")  
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["yourdomain.com", "127.0.0.1"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -16,6 +16,11 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "bookshelf",  # your custom app
+]
+INSTALLED_APPS += ["csp"]
+
+MIDDLEWARE += [
+    "csp.middleware.CSPMiddleware",
 ]
 
 MIDDLEWARE = [
@@ -77,3 +82,18 @@ AUTH_USER_MODEL = "bookshelf.CustomUser"
 # Media settings (for profile photos)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'", "cdnjs.cloudflare.com")
+CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com")
+CSP_FONT_SRC = ("'self'", "fonts.gstatic.com")
