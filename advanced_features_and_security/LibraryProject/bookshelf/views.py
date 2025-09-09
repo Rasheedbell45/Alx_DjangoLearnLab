@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import permission_required
 from .models import Book
 from django.views.decorators.csrf import csrf_protect
-from .forms import BookForm
+from .forms import BookForm, ExampleForm
 
 @permission_required("bookshelf.can_view", raise_exception=True)
 def book_list(request):
@@ -43,7 +43,7 @@ def book_delete(request, pk):
 
 @csrf_protect
 def book_list(request):
-    books = Book.objects.all()  # Safe ORM query
+    books = Book.objects.all()
     return render(request, "bookshelf/book_list.html", {"books": books})
 
 @csrf_protect
@@ -55,4 +55,38 @@ def book_create(request):
             return redirect("book_list")
     else:
         form = BookForm()
+    return render(request, "bookshelf/form_example.html", {"form": form})
+
+@csrf_protect
+def book_edit(request, pk):
+    book = get_object_or_404(Book, pk=pk)
+    if request.method == "POST":
+        form = BookForm(request.POST, instance=book)
+        if form.is_valid():
+            form.save()
+            return redirect("book_list")
+    else:
+        form = BookForm(instance=book)
+    return render(request, "bookshelf/form_example.html", {"form": form})
+
+
+@csrf_protect
+def book_delete(request, pk):
+    book = get_object_or_404(Book, pk=pk)
+    book.delete()
+    return redirect("book_list")
+
+@csrf_protect
+def example_view(request):
+    if request.method == "POST":
+        form = ExampleForm(request.POST)
+        if form.is_valid():
+            # Securely handle form data
+            name = form.cleaned_data["name"]
+            email = form.cleaned_data["email"]
+            message = form.cleaned_data["message"]
+            # (Example: log or process data here)
+            return redirect("book_list")
+    else:
+        form = ExampleForm()
     return render(request, "bookshelf/form_example.html", {"form": form})
