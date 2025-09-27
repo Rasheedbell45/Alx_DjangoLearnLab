@@ -17,3 +17,14 @@ This project demonstrates advanced API development using Django REST Framework.
 ## Notes
 - Publication year validation prevents future dates.
 - Nested serializers allow viewing Author → Book relationships.
+
+## BookListView Query Capabilities
+
+- Filtering:
+  - `title` → exact match
+  - `author__name` → exact match
+  - `publication_year` → exact match
+- Searching:
+  - `search` → partial match on `title` or `author.name`
+- Ordering:
+  - `ordering` → order by `title` or `publication_year`, prefix with `-` for descending
