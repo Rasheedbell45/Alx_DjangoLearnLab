@@ -1,14 +1,14 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Django Blog{% endblock %}</title>
-    <!-- Link your CSS here -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-    <!-- Header / Navigation -->
+    <!-- Header -->
     <header>
         <nav>
             <a href="{% url 'post-list' %}">Home</a>
@@ -30,27 +30,61 @@
         <hr>
     </header>
 
-    <!-- Main Content -->
-    <main>
-        {% if messages %}
-            <ul>
-                {% for message in messages %}
-                    <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>
-                        {{ message }}
-                    </li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-        
-        {% block content %}
-        <!-- Page-specific content goes here -->
-        {% endblock %}
-    </main>
+    <!-- Main content with sidebar -->
+    <div style="display:flex; gap: 20px; margin: 20px;">
+        <!-- Main content area -->
+        <main style="flex:3;">
+            {% if messages %}
+                <ul>
+                    {% for message in messages %}
+                        <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>
+                            {{ message }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            
+            {% block content %}
+            <!-- Page-specific content -->
+            {% endblock %}
+        </main>
+
+        <!-- Sidebar -->
+        <aside style="flex:1; border-left: 1px solid #ccc; padding-left: 20px;">
+            <!-- Recent posts -->
+            <section>
+                <h3>Recent Posts</h3>
+                <ul>
+                    {% for recent_post in recent_posts %}
+                        <li>
+                            <a href="{% url 'post-detail' recent_post.pk %}">{{ recent_post.title }}</a>
+                        </li>
+                    {% empty %}
+                        <li>No recent posts.</li>
+                    {% endfor %}
+                </ul>
+            </section>
+
+            <!-- Tags -->
+            <section>
+                <h3>Tags</h3>
+                <ul>
+                    {% for tag in tags %}
+                        <li>
+                            <a href="{% url 'posts-by-tag' tag.name %}">{{ tag.name }}</a>
+                        </li>
+                    {% empty %}
+                        <li>No tags yet.</li>
+                    {% endfor %}
+                </ul>
+            </section>
+        </aside>
+    </div>
 
     <!-- Footer -->
     <footer>
         <hr>
-        <p>&copy; {{ year }} Django Blog. All rights reserved.</p>
+        <p>&copy; {% now "Y" %} Django Blog. All rights reserved.</p>
     </footer>
 </body>
 </html>
