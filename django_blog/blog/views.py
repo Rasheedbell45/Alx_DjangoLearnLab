@@ -17,7 +17,7 @@ def register_view(request):
             user = form.save()
             login(request, user)
             messages.success(request, "Registration successful!")
-            return redirect('home')  # Change to homepage
+            return redirect('post-list')
         else:
             messages.error(request, "Unsuccessful registration. Invalid information.")
     else:
@@ -35,7 +35,7 @@ def login_view(request):
             if user is not None:
                 login(request, user)
                 messages.info(request, f"You are now logged in as {username}.")
-                return redirect('home')
+                return redirect('post-list')
             else:
                 messages.error(request, "Invalid username or password.")
         else:
@@ -69,7 +69,7 @@ class PostListView(ListView):
     template_name = 'blog/post_list.html'
     context_object_name = 'posts'
     ordering = ['-published_date']
-    paginate_by = 5  # optional pagination
+    paginate_by = 5
 
 # Post detail
 class PostDetailView(DetailView):
@@ -110,20 +110,19 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         post = self.get_object()
         return self.request.user == post.author
 
-@login_required
-def add_comment(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
-    if request.method == "POST":
-        form = CommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.post = post
-            comment.author = request.user
-            comment.save()
-            return redirect('post-detail', pk=post.id)
-    else:
-        form = CommentForm()
-    return redirect('post-detail', pk=post.id)
+# Create comment (Class-based)
+class CommentCreateView(LoginRequiredMixin, CreateView):
+    model = Comment
+    form_class = CommentForm
+    template_name = 'blog/comment_form.html'
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        form.instance.post = get_object_or_404(Post, id=self.kwargs['post_id'])
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('post-detail', kwargs={'pk': self.object.post.pk})
 
 # Update comment
 class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
