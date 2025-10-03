@@ -9,6 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from .models import Post, Comment
 from django.db.models import Q
+from taggit.models import Tag
 
 # Registration view
 def register_view(request):
@@ -160,3 +161,8 @@ def search_posts(request):
             Q(tags__name__icontains=query)
         ).distinct()
     return render(request, 'blog/search_results.html', {'results': results, 'query': query})
+
+def posts_by_tag(request, tag_slug):
+    tag = get_object_or_404(Tag, slug=tag_slug)
+    posts = Post.objects.filter(tags__name__in=[tag.name])
+    return render(request, 'blog/posts_by_tag.html', {'tag': tag, 'posts': posts})
