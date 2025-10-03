@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Post, Comment
-from taggit.forms import TagWidget
+from taggit.managers import TaggableManager
 
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -33,3 +33,13 @@ class CommentForm(forms.ModelForm):
         widgets = {
             'content': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Write your comment...'})
         }
+
+class Post(models.Model):
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    published_date = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    tags = TaggableManager()
+
+    def __str__(self):
+        return self.title
