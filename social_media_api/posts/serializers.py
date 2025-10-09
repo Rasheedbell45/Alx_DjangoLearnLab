@@ -4,6 +4,7 @@ from .models import Post, Comment, Like
 
 User = get_user_model()
 
+
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(read_only=True, slug_field="username")
 
@@ -17,29 +18,51 @@ class PostSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(read_only=True, slug_field="username")
     comments = CommentSerializer(many=True, read_only=True)
     comments_count = serializers.SerializerMethodField()
+    likes_count = serializers.SerializerMethodField()
+    liked_by_me = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ("id", "author", "title", "content", "created_at", "updated_at", "comments", "comments_count")
-        read_only_fields = ("id", "author", "created_at", "updated_at", "comments", "comments_count")
+        fields = (
+            "id",
+            "author",
+            "title",
+            "content",
+            "created_at",
+            "updated_at",
+            "comments",
+            "comments_count",
+            "likes_count",
+            "liked_by_me",
+        )
+        read_only_fields = (
+            "id",
+            "author",
+            "created_at",
+            "updated_at",
+            "comments",
+            "comments_count",
+            "likes_count",
+            "liked_by_me",
+        )
 
     def get_comments_count(self, obj):
         return obj.comments.count()
 
+    def get_likes_count(self, obj):
+        return obj.likes.count()
+
+    def get_liked_by_me(self, obj):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(user=request.user).exists()
+        return False
+
+
 class LikeSerializer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(read_only=True, slug_field="username")
+
     class Meta:
         model = Like
         fields = ("id", "post", "user", "created_at")
         read_only_fields = ("id", "user", "created_at")
-likes_count = serializers.SerializerMethodField()
-liked_by_me = serializers.SerializerMethodField()
-
-def get_likes_count(self, obj):
-    return obj.likes.count()
-
-def get_liked_by_me(self, obj):
-    request = self.context.get("request")
-    if request and request.user.is_authenticated:
-        return obj.likes.filter(user=request.user).exists()
-    return False
