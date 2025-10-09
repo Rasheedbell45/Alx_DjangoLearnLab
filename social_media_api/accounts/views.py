@@ -5,7 +5,8 @@ from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
-from .models import Post  # assuming Post is accessible here
+from .models import Post, Notification
+from django.contrib.contenttypes.models import ContentType
 
 CustomUser = get_user_model()
 
@@ -78,6 +79,14 @@ class PublicProfileAPIView(APIView):
 # Follow / Unfollow
 class FollowUserAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    Notification.objects.create(
+    recipient=target,
+    actor=request.user,
+    verb="started following you",
+    # target can be None or point to actor
+    target_content_type=ContentType.objects.get_for_model(request.user),
+    target_object_id=str(request.user.id),
+)
 
     def post(self, request, user_id):
         if request.user.id == user_id:
