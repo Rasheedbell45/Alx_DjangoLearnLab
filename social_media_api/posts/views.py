@@ -60,9 +60,9 @@ class FeedListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        following_users = user.following.all().order_by
+        following_users = user.following.all()
         return (
-            Post.objects.filter(author__in=following_users)
+            .Post.objects.filter(author__in=following_users).order_by
             .select_related("author")
             .prefetch_related("comments")
             .order_by("-created_at")
