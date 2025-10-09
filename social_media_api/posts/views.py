@@ -1,12 +1,15 @@
-from rest_framework import viewsets, permissions, filters, generics
+from rest_framework import viewsets, permissions, filters, generics, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
+from django.contrib.contenttypes.models import ContentType
+
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer, LikeSerializer
-from rest_framework.permissions import IsAuthenticated, IsOwnerOrReadOnly
-from django.contrib.contenttypes.models import ContentType
+from .permissions import IsOwnerOrReadOnly
+from notifications.models import Notification
 
 class PostViewSet(viewsets.ModelViewSet):
     """
@@ -51,19 +54,22 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+
 class FeedListAPIView(generics.ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # posts from users current user follows
         user = self.request.user
-        # user.following is already a queryset of User objects
         following_qs = user.following.all()
-        return Post.objects.filter(author__in=following_users).order_by
+        return Post.objects.filter(author__in=following_qs)\
+            .select_related("author")\
+            .prefetch_related("comments")\
+            .order_by("-created_at")
+
 
 class LikePostAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
         post = get_object_or_404(Post, pk=pk)
@@ -73,8 +79,6 @@ class LikePostAPIView(APIView):
 
         # create notification for post author (skip if author == liker)
         if post.author != request.user:
-            # create Notification directly
-            from notifications.models import Notification
             Notification.objects.create(
                 recipient=post.author,
                 actor=request.user,
@@ -88,7 +92,7 @@ class LikePostAPIView(APIView):
 
 
 class UnlikePostAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
         post = get_object_or_404(Post, pk=pk)
