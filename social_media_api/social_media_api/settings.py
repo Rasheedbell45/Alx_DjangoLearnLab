@@ -8,6 +8,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Security
 SECRET_KEY = config("SECRET_KEY", default="unsafe-secret-key")
 DEBUG = config("DEBUG", default=False, cast=bool)
+if not isinstance(DEBUG, bool):
+    DEBUG = False
+    
 ALLOWED_HOSTS = ["*"]
 
 # Application definition
