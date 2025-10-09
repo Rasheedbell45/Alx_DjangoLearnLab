@@ -60,7 +60,7 @@ class FeedListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        following_users = user.following.all()
+        following_users = user.following.all().order_by
         return (
             Post.objects.filter(author__in=following_users)
             .select_related("author")
