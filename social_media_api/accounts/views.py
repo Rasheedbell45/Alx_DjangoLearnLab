@@ -4,7 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
+from .models import Post
+from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, PostSerializer
 
 User = get_user_model()
 
@@ -128,3 +129,14 @@ class FollowingListAPIView(generics.ListAPIView):
         user_id = self.kwargs.get("user_id")
         user = get_object_or_404(User, id=user_id)
         return user.following.all()
+
+class FeedListAPIView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # posts from users current user follows
+        user = self.request.user
+        # user.following is already a queryset of User objects
+        following_qs = user.following.all()
+        return Post.objects.filter(author__in=following_qs).select_related("author").prefetch_related("comments").order_by("-created_at")
