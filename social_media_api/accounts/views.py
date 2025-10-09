@@ -2,10 +2,13 @@ from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
+from django.contrib.auth import get_user_model
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
-from .models import User
 
-# Registration view
+User = get_user_model()
+
+
+# Registration View
 class RegisterAPIView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
@@ -15,11 +18,14 @@ class RegisterAPIView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         token, _ = Token.objects.get_or_create(user=user)
-        data = UserSerializer(user, context={"request": request}).data
-        return Response({"user": data, "token": token.key}, status=status.HTTP_201_CREATED)
+        user_data = UserSerializer(user, context={"request": request}).data
+        return Response(
+            {"user": user_data, "token": token.key},
+            status=status.HTTP_201_CREATED
+        )
 
 
-# Login view
+# Login View
 class LoginAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -28,24 +34,34 @@ class LoginAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         token, _ = Token.objects.get_or_create(user=user)
-        data = UserSerializer(user, context={"request": request}).data
-        return Response({"user": data, "token": token.key})
+        user_data = UserSerializer(user, context={"request": request}).data
+        return Response(
+            {"user": user_data, "token": token.key},
+            status=status.HTTP_200_OK
+        )
 
 
-# Profile view (view/update the authenticated user)
+# Authenticated User Profile (View & Update)
 class ProfileAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         serializer = UserSerializer(request.user, context={"request": request})
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request):
-        serializer = UserSerializer(request.user, data=request.data, partial=True, context={"request": request})
+        serializer = UserSerializer(
+            request.user,
+            data=request.data,
+            partial=True,
+            context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+# Public Profile View (Anyone can view)
 class PublicProfileAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -53,6 +69,6 @@ class PublicProfileAPIView(APIView):
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
-            return Response({"detail": "Not found"}, status=404)
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = UserSerializer(user, context={"request": request})
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
