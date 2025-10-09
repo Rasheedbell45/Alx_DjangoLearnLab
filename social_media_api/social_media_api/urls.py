@@ -7,4 +7,5 @@ urlpatterns = [
     path("api/auth/", drf_views.obtain_auth_token, name="api-token-auth"),
     path("api/accounts/", include("accounts.urls")),
     path("api/posts/", include("posts.urls")),
+    path("api/notifications/", include("notifications.urls")),
 ]
