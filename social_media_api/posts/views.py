@@ -59,4 +59,4 @@ class FeedListAPIView(generics.ListAPIView):
         user = self.request.user
         # user.following is already a queryset of User objects
         following_qs = user.following.all()
-        return Post.objects.filter(author__in=following_qs).select_related("author").prefetch_related("comments").order_by("-created_at")
+        return Post.objects.filter(author__in=following_users).order_by
