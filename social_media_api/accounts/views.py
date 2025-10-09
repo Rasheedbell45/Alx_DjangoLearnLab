@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
 
 User = get_user_model()
@@ -72,3 +73,58 @@ class PublicProfileAPIView(APIView):
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = UserSerializer(user, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class FollowUserAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, user_id):
+        # current user wants to follow target_user
+        if request.user.id == user_id:
+            return Response({"detail": "You cannot follow yourself."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        target = get_object_or_404(User, id=user_id)
+        # Use either: request.user.following.add(target) or target.followers.add(request.user)
+        request.user.following.add(target)
+        return Response({"detail": f"You are now following {target.username}."}, status=status.HTTP_200_OK)
+
+
+class UnfollowUserAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, user_id):
+        if request.user.id == user_id:
+            return Response({"detail": "You cannot unfollow yourself."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        target = get_object_or_404(User, id=user_id)
+        request.user.following.remove(target)
+        return Response({"detail": f"You unfollowed {target.username}."}, status=status.HTTP_200_OK)
+
+
+class FollowersListAPIView(generics.ListAPIView):
+    serializer_class = None  # will use UserSerializer below
+    permission_classes = [permissions.AllowAny]
+
+    def get_serializer_class(self):
+        # lazy import to avoid circular imports
+        from .serializers import UserSerializer
+        return UserSerializer
+
+    def get_queryset(self):
+        user_id = self.kwargs.get("user_id")
+        user = get_object_or_404(User, id=user_id)
+        return user.followers.all()
+
+
+class FollowingListAPIView(generics.ListAPIView):
+    serializer_class = None
+
+    def get_serializer_class(self):
+        from .serializers import UserSerializer
+        return UserSerializer
+
+    def get_queryset(self):
+        user_id = self.kwargs.get("user_id")
+        user = get_object_or_404(User, id=user_id)
+        return user.following.all()
