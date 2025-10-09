@@ -32,3 +32,14 @@ class LikeSerializer(serializers.ModelSerializer):
         model = Like
         fields = ("id", "post", "user", "created_at")
         read_only_fields = ("id", "user", "created_at")
+likes_count = serializers.SerializerMethodField()
+liked_by_me = serializers.SerializerMethodField()
+
+def get_likes_count(self, obj):
+    return obj.likes.count()
+
+def get_liked_by_me(self, obj):
+    request = self.context.get("request")
+    if request and request.user.is_authenticated:
+        return obj.likes.filter(user=request.user).exists()
+    return False
