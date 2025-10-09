@@ -3,9 +3,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-from .models import Post, Comment
-from .serializers import PostSerializer, CommentSerializer
-from .permissions import IsOwnerOrReadOnly
+from .models import Post, Comment, Like
+from .serializers import PostSerializer, CommentSerializer, LikeSerializer
+from rest_framework.permissions import IsAuthenticated, IsOwnerOrReadOnly
+from django.contrib.contenttypes.models import ContentType
 
 class PostViewSet(viewsets.ModelViewSet):
     """
@@ -60,3 +61,38 @@ class FeedListAPIView(generics.ListAPIView):
         # user.following is already a queryset of User objects
         following_qs = user.following.all()
         return Post.objects.filter(author__in=following_users).order_by
+
+class LikePostAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        post = get_object_or_404(Post, pk=pk)
+        like, created = Like.objects.get_or_create(post=post, user=request.user)
+        if not created:
+            return Response({"detail": "Already liked"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # create notification for post author (skip if author == liker)
+        if post.author != request.user:
+            # create Notification directly
+            from notifications.models import Notification
+            Notification.objects.create(
+                recipient=post.author,
+                actor=request.user,
+                verb="liked your post",
+                target_content_type=ContentType.objects.get_for_model(post),
+                target_object_id=str(post.id),
+            )
+
+        serializer = LikeSerializer(like, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class UnlikePostAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        post = get_object_or_404(Post, pk=pk)
+        deleted, _ = Like.objects.filter(post=post, user=request.user).delete()
+        if deleted == 0:
+            return Response({"detail": "You have not liked this post"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "Unliked"}, status=status.HTTP_200_OK)
