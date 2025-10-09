@@ -1,5 +1,16 @@
+from pathlib import Path
+import os
+from datetime import timedelta
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "unsafe-secret-key-for-dev")
+DEBUG = False
+
+ALLOWED_HOSTS = ["your-domain.com", "www.your-domain.com", "localhost", "127.0.0.1"]
+
 INSTALLED_APPS = [
-    # django default apps...
+    # Default Django apps
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -7,17 +18,16 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    # third party
+    # Third-party apps
     "rest_framework",
     "rest_framework.authtoken",
+    "django_filters",
 
-    # your apps
+    # Local apps
     "accounts",
     "posts",
-    "django_filters",
 ]
 
-# custom user model
 AUTH_USER_MODEL = "accounts.User"
 
 REST_FRAMEWORK = {
@@ -26,15 +36,10 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
-        "django_filters.rest_framework.DjangoFilterBackend",
-        "rest_framework.filters.SearchFilter",
-        "rest_framework.filters.OrderingFilter",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
 }
 
-# near bottom
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+SECURE_BROWSER_XSS_FILTER =_
