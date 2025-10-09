@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, get_user_model
 from .models import User
 from rest_framework.authtoken.models import Token
 
-User = get_user_model()
+User = get_user_model().objects.create_user
 
 class UserSerializer(serializers.ModelSerializer):
     followers_count = serializers.SerializerMethodField()
